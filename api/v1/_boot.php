@@ -147,7 +147,17 @@ function inr(float $x): string
 
 set_exception_handler(static function (Throwable $e): void {
     error_log('[api] ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine());
-    // The message stays generic on purpose — a stack trace in an API response is
-    // a free map of the backend for anyone probing it.
+
+    // A database that is not running is an OPERATIONAL state, not a bug, and it
+    // deserves its own answer. 503 is the honest code, and naming the dependency
+    // turns a mystery into something the reader can act on. It leaks nothing an
+    // attacker could not learn by watching the service fail anyway.
+    if ($e instanceof PDOException || str_contains($e->getMessage(), 'SQLSTATE')) {
+        fail(503, 'The database is not reachable. If you are running this locally, '
+                . 'start MySQL from the XAMPP control panel and try again.');
+    }
+
+    // Everything else stays generic on purpose — a stack trace in an API response
+    // is a free map of the backend for anyone probing it.
     fail(500, 'Something went wrong on our side. The error has been logged.');
 });

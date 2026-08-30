@@ -1,0 +1,31 @@
+# Secrets — real API keys and DB credentials live here and never in git.
+api/config/secrets.php
+
+# Local environment
+.env
+.env.local
+*.local.php
+
+# Logs and runtime
+logs/
+*.log
+cache/
+tmp/
+
+# Database dumps — large, and they contain the tenant's estate
+*.sql.gz
+db/*.sql
+dumps/
+
+# Dependencies and build output
+node_modules/
+vendor/
+dist/
+.vite/
+
+# Editor and OS noise
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.swp

@@ -162,7 +162,7 @@ different problem and OR-Tools earns its place then.
 |---|---|
 | Backend | **PHP 8.1**, no framework, flat endpoints under `api/` |
 | Database | **MariaDB / MySQL**, 17 tables |
-| Frontend | **React 19 + Vite + Tailwind** *(Phase 4)* |
+| Frontend | **React 19 + Vite**, hand-written CSS tokens (no utility framework) |
 | Models | **OpenRouter**, lane-routed *(Phase 5)* |
 | Embeddings | **Jina v3**, DB-cached *(Phase 5)* |
 | Scanners | Nmap, OpenVAS, Wazuh via ingestion workers |
@@ -240,6 +240,25 @@ Verified: an executive token on `findings.php` returns **403**; on `exposure.php
 
 ---
 
+## Frontend
+
+```bash
+npm install
+npm run dev          # http://localhost:5173
+```
+
+The app calls a relative `/api` path; `vite.config.js` proxies it to XAMPP. If you
+run the backend with `php -S` instead, point the proxy at it:
+
+```bash
+php -S 127.0.0.1:8899 -t .            # in one terminal
+VITE_API_ORIGIN=http://127.0.0.1:8899 npm run dev
+```
+
+Routes built: `/login`, `/dashboard`, `/findings`, `/findings/:id`, `/assets`,
+`/assets/:id`, `/controls`, `/exposure`, `/optimizer`, `/simulator`, `/monitor`.
+The rail hides routes a role cannot reach; the API enforces it regardless.
+
 ## Tests
 
 No framework. Plain PHP scripts that assert and exit non-zero.
@@ -287,7 +306,7 @@ tools/reset_db.sh         full rebuild
 - [x] **1 · Database** — schema, real threat feeds, seeded estate
 - [x] **2 · Risk engine** — five-factor score, loss model, per-asset aggregation, bands
 - [x] **3 · Optimizer + API** — knapsack, counterfactual portfolio, 10 endpoints, auth
-- [ ] **4 · Frontend** — React app across 22 routes
+- [x] **4 · Frontend** — React 19 + Vite, 11 routes against the interface book
 - [ ] **5 · Agent layer** — registry, reuse ladder, learning loops, AI copilot
 
 ### Phase 5 — the agent architecture

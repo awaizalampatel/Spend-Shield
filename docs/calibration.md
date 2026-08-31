@@ -73,3 +73,37 @@ The reuse ladder needs two more, and neither should be copied either:
 
 soundd.ai's values (0.80 and 0.62) are recorded here only as a reminder that they
 exist, not as defaults to adopt.
+
+---
+
+## The lexical fallback — measured 31 Aug 2026
+
+The Jina key ran out of balance mid-build (`AUTHZ_INSUFFICIENT_BALANCE`), which
+turned the fallback from a nicety into the live code path. So it was measured too,
+with a Dice coefficient over stemmed content tokens of name + description.
+
+| Pair | Dice | Should merge? | Does it? |
+|---|---|---|---|
+| MFA Privileged **Access** ↔ MFA Privileged **Accounts** | 0.6667 | yes | **yes** |
+| Unpatched RDP Vulnerability ↔ Exposed Remote Desktop | 0.2353 | yes | **no** |
+| Exchange RCE ↔ Unpatched VPN Gateway | 0.1250 | no | no |
+| Cloud Storage Exposure ↔ Legacy OT Protocol | 0.0000 | no | no |
+| Unpatched RDP ↔ Cloud Storage Exposure | 0.0000 | no | no |
+
+`MERGE_LEX = 0.55`, above the closest false positive (0.125) with a wide margin.
+
+### What this fallback cannot do
+
+It catches **the same words with one changed** — the failure that actually
+happens when a model names one job twice in a run. It does **not** catch a
+genuine paraphrase: *Unpatched RDP Vulnerability* and *Exposed Remote Desktop*
+share almost no tokens and score 0.235, below every usable threshold. Lowering
+the bar to catch it would sit under the 0.125 false-positive line and start
+merging unrelated families, which destroys a real specialist's history.
+
+So paraphrase twins survive on the roster until a Jina key with balance is
+configured. The nightly `dedupSweep` will collapse them on its next run once it
+has embeddings — nothing is lost, the merge is just deferred.
+
+This is the honest cost of running without the embedding key, stated rather than
+papered over with a threshold that would look better and behave worse.

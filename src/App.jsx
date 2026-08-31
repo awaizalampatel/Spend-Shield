@@ -19,6 +19,8 @@ import Exposure from './pages/Exposure';
 import Optimizer from './pages/Optimizer';
 import Simulator from './pages/Simulator';
 import Monitor from './pages/Monitor';
+import Agents from './pages/Agents';
+import AgentDetail from './pages/AgentDetail';
 
 export default function App() {
   const [signedIn, setSignedIn] = useState(() => Boolean(tokenStore.get()));
@@ -55,6 +57,8 @@ export default function App() {
         <Route path="/optimizer" element={<Optimizer />} />
         <Route path="/simulator" element={<Simulator />} />
         <Route path="/monitor" element={<Monitor />} />
+        <Route path="/agents" element={<Agents />} />
+        <Route path="/agents/:key" element={<AgentDetail />} />
         <Route path="*" element={
           <div className="page">
             <div className="empty">

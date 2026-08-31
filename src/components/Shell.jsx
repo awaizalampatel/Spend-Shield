@@ -23,6 +23,7 @@ const GROUPS = [
     ['Simulator', '/simulator', ['owner', 'executive', 'analyst']],
   ]},
   { label: 'Engine', items: [
+    ['Risk agents', '/agents', ['owner', 'executive', 'analyst', 'viewer']],
     ['Monitoring', '/monitor', ['owner', 'executive', 'analyst', 'viewer']],
   ]},
 ];

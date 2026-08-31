@@ -252,6 +252,9 @@ CREATE TABLE IF NOT EXISTS agents (
   name           VARCHAR(160) NOT NULL,
   description    TEXT NULL,
   category       VARCHAR(60) NULL,
+  -- the technology family this agent owns. Two agents may only merge when this
+  -- matches: name similarity alone merged MOVEit into Log4j.
+  family_subject VARCHAR(60) NULL,
   template       TEXT NULL,
   cand_template  TEXT NULL,
   cand_uses      INT NOT NULL DEFAULT 0,
@@ -317,3 +320,45 @@ CREATE TABLE IF NOT EXISTS feed_runs (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 SET FOREIGN_KEY_CHECKS = 1;
+
+-- ============================================================ PHASE 5
+-- The agent layer. An agent is a stored capability (a row), not a process.
+
+-- Vector cache. Jina is charged per token, so a string is embedded once and
+-- reused forever — agent descriptions barely change, and finding shapes repeat.
+CREATE TABLE IF NOT EXISTS embeddings (
+  hash        CHAR(40) NOT NULL PRIMARY KEY,   -- sha1 of model + task + text
+  model       VARCHAR(60) NOT NULL,
+  task        VARCHAR(40) NOT NULL,
+  dims        SMALLINT NOT NULL,
+  vector      MEDIUMBLOB NOT NULL,             -- packed float32, not JSON
+  created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Prompt-shape -> risk family. The deriver is an LLM call; this makes it a
+-- one-time cost per SHAPE of finding rather than per finding.
+CREATE TABLE IF NOT EXISTS risk_type_cache (
+  signature   VARCHAR(170) NOT NULL PRIMARY KEY,
+  slug        VARCHAR(80) NOT NULL,
+  name        VARCHAR(160) NOT NULL,
+  description TEXT NULL,
+  lane        VARCHAR(40) NULL,
+  created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Reuse depth 2: an equivalent finding already assessed for this tenant.
+CREATE TABLE IF NOT EXISTS assessment_warehouse (
+  id          INT AUTO_INCREMENT PRIMARY KEY,
+  tenant_id   INT NOT NULL,
+  agent_key   VARCHAR(80) NOT NULL,
+  shape_hash  CHAR(40) NOT NULL,        -- exact-match key (reuse depth 1)
+  shape_text  TEXT NOT NULL,            -- what was embedded
+  embedding   MEDIUMBLOB NULL,          -- for the semantic scan (depth 2)
+  payload     MEDIUMTEXT NOT NULL,      -- the stored assessment
+  quality     DECIMAL(4,2) NULL,
+  hits        INT NOT NULL DEFAULT 0,
+  expires_at  DATETIME NULL,
+  created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_wh_lookup (tenant_id, agent_key, expires_at),
+  KEY idx_wh_exact (tenant_id, shape_hash)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

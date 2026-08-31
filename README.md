@@ -307,7 +307,7 @@ tools/reset_db.sh         full rebuild
 - [x] **2 · Risk engine** — five-factor score, loss model, per-asset aggregation, bands
 - [x] **3 · Optimizer + API** — knapsack, counterfactual portfolio, 10 endpoints, auth
 - [x] **4 · Frontend** — React 19 + Vite, 11 routes against the interface book
-- [ ] **5 · Agent layer** — registry, reuse ladder, learning loops, AI copilot
+- [x] **5 · Agent layer (core)** — registry, reuse ladder, `/agents`. Learning loops and copilot deferred
 
 ### Phase 5 — the agent architecture
 
@@ -323,6 +323,56 @@ asset → reuse the evidence, skip the paid intel fetch). The second identical f
 costs **₹0** to assess.
 
 ---
+
+## The agent layer
+
+An **agent is a database row**, not a process: a stored capability with a model, an
+instruction, a usage record and a cost. Running one means loading the row.
+
+Agents are not configured — they are **created by findings arriving**. A finding is
+reduced to a family key (`vuln|exchange|internet`), the family is named once by a
+cheap model call, and an agent is created to own it. 54 findings produced 22 agents
+with no list written by anyone.
+
+### The reuse ladder
+
+| Depth | Match | Needs an API? |
+|---|---|---|
+| **1 · exact** | identical finding shape — a deterministic signature over product, exposure, severity, impacts and controls | **no** |
+| **2 · semantic** | equivalent shape by embedding similarity | yes (Jina) |
+
+What gets reused is the **written assessment**, not the arithmetic — the five-factor
+score runs over the estate in ~50ms and caching it would save nothing. The paragraph
+explaining the finding to a human is the model call, and the second identical finding
+should not pay for it twice.
+
+Measured on the demo estate:
+
+```
+first run    54 findings   131.0s   $0.013836
+second run   54 findings     0.8s   $0.000000   100% replayed
+```
+
+### Dedup, and the guard it needed
+
+The deriver names the same job many ways, so creation checks for an existing agent
+first and leaves a forwarding alias rather than a second row.
+
+Name similarity alone was not enough. Run against the real estate it merged **MOVEit
+into Log4j** (0.571), **SAP into Exchange** (0.588) and **Linux into Windows** (0.560) —
+derived names share the words "software" and "vulnerabilities". A merge now requires
+the same **technology family**, a deterministic fact off the finding; similarity only
+decides among candidates that already pass that test. That left 2 merges, both correct.
+
+See `docs/calibration.md` for the measured thresholds and what the lexical fallback
+cannot do.
+
+### Running it
+
+```bash
+php api/agents/assess.php            # assess every open finding
+php api/agents/assess.php --sweep    # and run nightly roster hygiene
+```
 
 ## Known limitations
 

@@ -171,6 +171,7 @@ function sync_nvd(PDO $pdo, int $limit): void
     $upd = $pdo->prepare(
         "UPDATE vulnerabilities
             SET cvss_version = ?, cvss_score = ?, cvss_severity = ?, cvss_vector = ?,
+                impact_c = ?, impact_i = ?, impact_a = ?,
                 cwe = COALESCE(?, cwe), published_at = COALESCE(?, published_at),
                 description = CASE WHEN description IS NULL OR description = '' THEN ? ELSE description END,
                 last_synced_at = NOW()
@@ -197,11 +198,15 @@ function sync_nvd(PDO $pdo, int $limit): void
             }
             $cwe = $c['weaknesses'][0]['description'][0]['value'] ?? null;
             if ($m) {
+                $vector = $m['vectorString'] ?? '';
                 $upd->execute([
                     (string) ($m['version'] ?? '3.1'),
                     $m['baseScore'] ?? null,
                     $sev,
-                    $m['vectorString'] ?? null,
+                    $vector ?: null,
+                    str_contains($vector, '/C:H') ? 1 : 0,
+                    str_contains($vector, '/I:H') ? 1 : 0,
+                    str_contains($vector, '/A:H') ? 1 : 0,
                     (is_string($cwe) && str_starts_with($cwe, 'CWE-')) ? $cwe : null,
                     isset($c['published']) ? str_replace('T', ' ', substr($c['published'], 0, 19)) : null,
                     $desc,

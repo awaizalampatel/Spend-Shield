@@ -24,7 +24,9 @@ export default function FindingDetail() {
       <TopBar
         title={finding.title || finding.ref}
         sub={<>
-          <span className="mono">{finding.ref}</span>{' · '}
+          {finding.ref?.startsWith('CVE-')
+            ? <a className="mono" href={`https://nvd.nist.gov/vuln/detail/${finding.ref}`} target="_blank" rel="noreferrer">{finding.ref}</a>
+            : <span className="mono">{finding.ref}</span>}{' · '}
           <Link to={`/assets/${asset.id}`}>{asset.hostname}</Link>
           {' · assessed '}{score?.computed_at?.slice(0, 16) || 'not yet'}
         </>}

@@ -114,7 +114,10 @@ export default function Findings() {
                           <b>{(f.title || f.ref).slice(0, 58)}</b>
                         </Link>
                         <br />
-                        <span className="mono cx">{f.ref}</span>
+                        {f.ref?.startsWith('CVE-')
+                          ? <a className="mono cx" href={`https://nvd.nist.gov/vuln/detail/${f.ref}`}
+                               target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>{f.ref}</a>
+                          : <span className="mono cx">{f.ref}</span>}
                         {f.kev && <> <span className="chip crit"><i className="sq" />KEV</span></>}
                       </td>
                       <td>
